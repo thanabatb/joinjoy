@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="640" viewBox="0 0 640 640" fill="none">
+  <rect width="640" height="640" rx="48" fill="#FFF8EF"/>
+  <rect x="64" y="64" width="512" height="512" rx="32" fill="#0F7B69" opacity="0.08"/>
+  <rect x="128" y="128" width="384" height="384" rx="24" fill="#14352F"/>
+  <rect x="160" y="160" width="320" height="320" rx="16" fill="#FFF8EF"/>
+  <path d="M208 208H272V272H208V208Z" fill="#14352F"/>
+  <path d="M368 208H432V272H368V208Z" fill="#14352F"/>
+  <path d="M208 368H272V432H208V368Z" fill="#14352F"/>
+  <path d="M304 208H336V240H304V208Z" fill="#14352F"/>
+  <path d="M304 272H336V304H304V272Z" fill="#14352F"/>
+  <path d="M336 304H368V336H336V304Z" fill="#14352F"/>
+  <path d="M272 304H304V336H272V304Z" fill="#14352F"/>
+  <path d="M400 304H432V336H400V304Z" fill="#14352F"/>
+  <path d="M304 368H336V400H304V368Z" fill="#14352F"/>
+  <path d="M368 368H400V400H368V368Z" fill="#14352F"/>
+  <path d="M336 400H368V432H336V400Z" fill="#14352F"/>
+  <text x="320" y="560" text-anchor="middle" fill="#14352F" font-family="Arial, sans-serif" font-size="32" font-weight="700">
+    PromptPay Placeholder
+  </text>
+</svg>
