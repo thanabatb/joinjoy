@@ -3,11 +3,25 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+function getLocalDateTimeParts() {
+  const now = new Date();
+  const date = new Intl.DateTimeFormat("en-CA").format(now);
+  const time = now.toLocaleTimeString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false
+  });
+
+  return { date, time };
+}
+
+const defaultDateTime = getLocalDateTimeParts();
+
 const initialState = {
   title: "",
   venueName: "",
-  occurredAt: new Date().toISOString().slice(0, 16),
-  currency: "THB",
+  occurredDate: defaultDateTime.date,
+  occurredTime: defaultDateTime.time,
   serviceChargeType: "percentage",
   serviceChargeRate: "10",
   vatType: "percentage",
@@ -15,7 +29,12 @@ const initialState = {
   hostName: ""
 };
 
-export function CreateEventForm() {
+function formatDateForRequest(date: string, time: string) {
+  const safeTime = time || "19:00";
+  return new Date(`${date}T${safeTime}`).toISOString();
+}
+
+export function CreateEventForm({ formId }: { formId: string }) {
   const router = useRouter();
   const [form, setForm] = useState(initialState);
   const [error, setError] = useState<string | null>(null);
@@ -30,10 +49,15 @@ export function CreateEventForm() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        ...form,
-        occurredAt: new Date(form.occurredAt).toISOString(),
+        title: form.title,
+        venueName: form.venueName,
+        occurredAt: formatDateForRequest(form.occurredDate, form.occurredTime),
+        currency: "THB",
+        serviceChargeType: form.serviceChargeType,
         serviceChargeRate: Number(form.serviceChargeRate),
-        vatRate: Number(form.vatRate)
+        vatType: form.vatType,
+        vatRate: Number(form.vatRate),
+        hostName: form.hostName
       })
     });
 
@@ -45,123 +69,219 @@ export function CreateEventForm() {
       return;
     }
 
-    router.push(`/event/${payload.shareToken}`);
+    router.push(`/event/${payload.shareToken}/items`);
   }
 
   return (
-    <form className="card stack" onSubmit={handleSubmit}>
-      <div className="toolbar">
-        <h2 className="section-title">Create your outing</h2>
-        <span className="eyebrow">Screen 2</span>
-      </div>
-      <div className="form-grid">
-        <div className="field full">
-          <label htmlFor="title">Event name</label>
-          <input
-            id="title"
-            value={form.title}
-            onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
-            placeholder="Birthday dinner at Sarnies"
-            required
-          />
+    <form className="create-form" id={formId} onSubmit={handleSubmit}>
+      <section className="create-card">
+        <div className="create-card-glow" />
+        <div className="stack" style={{ gap: 22, position: "relative", zIndex: 1 }}>
+          <div className="field">
+            <label htmlFor="title">What's the occasion?</label>
+            <input
+              id="title"
+              value={form.title}
+              onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
+              placeholder="Jazz Night"
+              required
+            />
+          </div>
+
+          <div className="field">
+            <label htmlFor="venue">Where to? Optional</label>
+            <input
+              id="venue"
+              value={form.venueName}
+              onChange={(event) => setForm((current) => ({ ...current, venueName: event.target.value }))}
+              placeholder="The Local Bistro"
+            />
+          </div>
+
+          <div className="field">
+            <label htmlFor="hostName">Who's hosting?</label>
+            <input
+              id="hostName"
+              value={form.hostName}
+              onChange={(event) => setForm((current) => ({ ...current, hostName: event.target.value }))}
+              placeholder="Thanabat"
+              required
+            />
+          </div>
+
+          <div className="create-two-up">
+            <div className="field">
+              <label htmlFor="occurredDate">When?</label>
+              <input
+                id="occurredDate"
+                type="date"
+                value={form.occurredDate}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, occurredDate: event.target.value }))
+                }
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="occurredTime">Time</label>
+              <input
+                id="occurredTime"
+                type="time"
+                value={form.occurredTime}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, occurredTime: event.target.value }))
+                }
+              />
+            </div>
+          </div>
         </div>
-        <div className="field">
-          <label htmlFor="venue">Place</label>
-          <input
-            id="venue"
-            value={form.venueName}
-            onChange={(event) => setForm((current) => ({ ...current, venueName: event.target.value }))}
-            placeholder="Sarnies Bangkok"
-          />
+      </section>
+
+      <section className="create-settings-card">
+        <div className="toolbar">
+          <h3 className="create-settings-title">Cost Settings</h3>
+          <div className="create-currency-pill">
+            <span>THB</span>
+            <span className="muted">MVP</span>
+          </div>
         </div>
-        <div className="field">
-          <label htmlFor="hostName">Host name</label>
-          <input
-            id="hostName"
-            value={form.hostName}
-            onChange={(event) => setForm((current) => ({ ...current, hostName: event.target.value }))}
-            placeholder="Thanabat"
-            required
-          />
+
+        <div className="stack" style={{ gap: 22 }}>
+          <div className="stack" style={{ gap: 12 }}>
+            <div className="toolbar">
+              <span className="create-setting-label">Service Charge</span>
+              <span className="create-setting-note">Optional</span>
+            </div>
+            <div className="create-chip-row">
+              <button
+                className={form.serviceChargeType === "none" ? "create-chip active secondary" : "create-chip"}
+                onClick={() =>
+                  setForm((current) => ({
+                    ...current,
+                    serviceChargeType: "none",
+                    serviceChargeRate: "0"
+                  }))
+                }
+                type="button"
+              >
+                None
+              </button>
+              <button
+                className={form.serviceChargeType === "percentage" && form.serviceChargeRate === "10" ? "create-chip active secondary" : "create-chip"}
+                onClick={() =>
+                  setForm((current) => ({
+                    ...current,
+                    serviceChargeType: "percentage",
+                    serviceChargeRate: "10"
+                  }))
+                }
+                type="button"
+              >
+                10% Default
+              </button>
+              <button
+                className={form.serviceChargeType === "custom_amount" ? "create-chip active secondary" : "create-chip"}
+                onClick={() =>
+                  setForm((current) => ({
+                    ...current,
+                    serviceChargeType: "custom_amount",
+                    serviceChargeRate: current.serviceChargeRate === "0" ? "10" : current.serviceChargeRate
+                  }))
+                }
+                type="button"
+              >
+                Custom
+              </button>
+            </div>
+            {form.serviceChargeType === "custom_amount" ? (
+              <div className="field">
+                <label htmlFor="serviceChargeRate">Custom service charge amount</label>
+                <input
+                  id="serviceChargeRate"
+                  min="0"
+                  step="0.01"
+                  type="number"
+                  value={form.serviceChargeRate}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, serviceChargeRate: event.target.value }))
+                  }
+                />
+              </div>
+            ) : null}
+          </div>
+
+          <div className="stack" style={{ gap: 12 }}>
+            <div className="toolbar">
+              <span className="create-setting-label">VAT / Tax</span>
+              <span className="create-setting-note">Standard</span>
+            </div>
+            <div className="create-chip-row">
+              <button
+                className={form.vatType === "none" ? "create-chip active tertiary" : "create-chip"}
+                onClick={() =>
+                  setForm((current) => ({
+                    ...current,
+                    vatType: "none",
+                    vatRate: "0"
+                  }))
+                }
+                type="button"
+              >
+                None
+              </button>
+              <button
+                className={form.vatType === "percentage" && form.vatRate === "7" ? "create-chip active tertiary" : "create-chip"}
+                onClick={() =>
+                  setForm((current) => ({
+                    ...current,
+                    vatType: "percentage",
+                    vatRate: "7"
+                  }))
+                }
+                type="button"
+              >
+                7% Default
+              </button>
+              <button
+                className={form.vatType === "custom_amount" ? "create-chip active tertiary" : "create-chip"}
+                onClick={() =>
+                  setForm((current) => ({
+                    ...current,
+                    vatType: "custom_amount",
+                    vatRate: current.vatRate === "0" ? "7" : current.vatRate
+                  }))
+                }
+                type="button"
+              >
+                Custom
+              </button>
+            </div>
+            {form.vatType === "custom_amount" ? (
+              <div className="field">
+                <label htmlFor="vatRate">Custom VAT amount</label>
+                <input
+                  id="vatRate"
+                  min="0"
+                  step="0.01"
+                  type="number"
+                  value={form.vatRate}
+                  onChange={(event) => setForm((current) => ({ ...current, vatRate: event.target.value }))}
+                />
+              </div>
+            ) : null}
+          </div>
         </div>
-        <div className="field">
-          <label htmlFor="occurredAt">Date and time</label>
-          <input
-            id="occurredAt"
-            type="datetime-local"
-            value={form.occurredAt}
-            onChange={(event) => setForm((current) => ({ ...current, occurredAt: event.target.value }))}
-          />
-        </div>
-        <div className="field">
-          <label htmlFor="currency">Currency</label>
-          <select
-            id="currency"
-            value={form.currency}
-            onChange={(event) => setForm((current) => ({ ...current, currency: event.target.value }))}
-          >
-            <option value="THB">THB</option>
-            <option value="USD">USD</option>
-            <option value="JPY">JPY</option>
-          </select>
-        </div>
-        <div className="field">
-          <label htmlFor="serviceChargeType">Service charge</label>
-          <select
-            id="serviceChargeType"
-            value={form.serviceChargeType}
-            onChange={(event) =>
-              setForm((current) => ({ ...current, serviceChargeType: event.target.value }))
-            }
-          >
-            <option value="percentage">Percentage</option>
-            <option value="custom_amount">Custom amount</option>
-            <option value="none">None</option>
-          </select>
-        </div>
-        <div className="field">
-          <label htmlFor="serviceChargeRate">Service charge rate</label>
-          <input
-            id="serviceChargeRate"
-            type="number"
-            min="0"
-            step="0.01"
-            value={form.serviceChargeRate}
-            onChange={(event) =>
-              setForm((current) => ({ ...current, serviceChargeRate: event.target.value }))
-            }
-          />
-        </div>
-        <div className="field">
-          <label htmlFor="vatType">VAT</label>
-          <select
-            id="vatType"
-            value={form.vatType}
-            onChange={(event) => setForm((current) => ({ ...current, vatType: event.target.value }))}
-          >
-            <option value="percentage">Percentage</option>
-            <option value="custom_amount">Custom amount</option>
-            <option value="none">None</option>
-          </select>
-        </div>
-        <div className="field">
-          <label htmlFor="vatRate">VAT rate</label>
-          <input
-            id="vatRate"
-            type="number"
-            min="0"
-            step="0.01"
-            value={form.vatRate}
-            onChange={(event) => setForm((current) => ({ ...current, vatRate: event.target.value }))}
-          />
-        </div>
-      </div>
+      </section>
+
+      <section className="create-tip-card">
+        <div className="create-tip-icon">i</div>
+        <p className="create-tip-copy">
+          JoinJoy automatically splits the final bill including taxes, so you can focus on the
+          moment, not the math.
+        </p>
+      </section>
+
       {error ? <div className="notice">{error}</div> : null}
-      <div className="button-row">
-        <button className="button" disabled={isPending} type="submit">
-          {isPending ? "Creating..." : "Continue"}
-        </button>
-      </div>
+      {isPending ? <div className="notice">Creating your event...</div> : null}
     </form>
   );
 }

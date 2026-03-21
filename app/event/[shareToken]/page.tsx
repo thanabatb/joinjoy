@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { EventHero } from "@/components/event/event-hero";
 import { EventProgress } from "@/components/event/event-progress";
 import { ShareLinkCard } from "@/components/event/share-link-card";
@@ -31,6 +32,11 @@ export default async function EventOverviewPage({
       <div className="grid-2">
         <EventProgress event={event} />
         <ShareLinkCard shareToken={shareToken} />
+      </div>
+      <div className="button-row">
+        <Link className="button-secondary" href={`/event/${shareToken}/items`}>
+          Go to add expenses
+        </Link>
       </div>
       <div className="grid-2">
         <AddParticipantForm shareToken={shareToken} />
