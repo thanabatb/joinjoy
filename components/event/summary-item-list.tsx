@@ -1,0 +1,283 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
+import { formatCurrency } from "@/lib/utils/currency";
+import type { ItemClaim } from "@/types/claim";
+import type { Item } from "@/types/item";
+import type { Participant } from "@/types/participant";
+
+function getInitials(name: string) {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
+}
+
+function getItemIcon(name: string) {
+  const value = name.toLowerCase();
+
+  if (value.includes("fries") || value.includes("slider") || value.includes("beef")) {
+    return "restaurant";
+  }
+
+  if (value.includes("cocktail") || value.includes("negroni") || value.includes("beer")) {
+    return "local_bar";
+  }
+
+  if (value.includes("water")) {
+    return "water_drop";
+  }
+
+  return "receipt_long";
+}
+
+function EventSummaryIcon({ icon }: { icon: string }) {
+  if (icon === "restaurant") {
+    return (
+      <svg aria-hidden="true" className="event-summary-item-svg" fill="none" viewBox="0 0 24 24">
+        <path
+          d="M7 4v7M10 4v7M7 8h3M15 4v16M17.5 4c0 3-1.5 4.5-3 5"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.8"
+        />
+      </svg>
+    );
+  }
+
+  if (icon === "local_bar") {
+    return (
+      <svg aria-hidden="true" className="event-summary-item-svg" fill="none" viewBox="0 0 24 24">
+        <path
+          d="M6 5h12l-4.5 5.5v5L10.5 18v-7.5L6 5Z"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.8"
+        />
+      </svg>
+    );
+  }
+
+  if (icon === "water_drop") {
+    return (
+      <svg aria-hidden="true" className="event-summary-item-svg" fill="none" viewBox="0 0 24 24">
+        <path
+          d="M12 4c3 4 5 6.6 5 9.2A5 5 0 1 1 7 13.2C7 10.6 9 8 12 4Z"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.8"
+        />
+      </svg>
+    );
+  }
+
+  return (
+    <svg aria-hidden="true" className="event-summary-item-svg" fill="none" viewBox="0 0 24 24">
+      <path
+        d="M7 4.5h8l3 3V19a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1v-13a1 1 0 0 1 1-1Z"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.8"
+      />
+      <path
+        d="M14 4.5v3h3M9 11h6M9 15h4"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.8"
+      />
+    </svg>
+  );
+}
+
+export function SummaryItemList({
+  claims,
+  currency,
+  items,
+  participants,
+  viewerParticipantId
+}: {
+  claims: ItemClaim[];
+  currency: string;
+  items: Item[];
+  participants: Participant[];
+  viewerParticipantId: string | null;
+}) {
+  const router = useRouter();
+  const [claimRows, setClaimRows] = useState(claims);
+  const [pendingItemId, setPendingItemId] = useState<string | null>(null);
+
+  const participantsById = useMemo(
+    () => Object.fromEntries(participants.map((participant) => [participant.id, participant])),
+    [participants]
+  );
+
+  async function handleClaim(item: Item) {
+    if (!viewerParticipantId || pendingItemId) {
+      return;
+    }
+
+    setPendingItemId(item.id);
+
+    try {
+      const response = await fetch(`/api/items/${item.id}/claims`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ participantId: viewerParticipantId })
+      });
+
+      if (!response.ok) {
+        return;
+      }
+
+      const now = new Date().toISOString();
+      setClaimRows((current) => [
+        ...current.filter((claim) => claim.itemId !== item.id),
+        {
+          id: `local-${item.id}-${viewerParticipantId}`,
+          eventId: item.eventId,
+          itemId: item.id,
+          participantId: viewerParticipantId,
+          splitAmount: item.totalPrice,
+          splitRatio: 1,
+          createdByType: "participant",
+          createdAt: now,
+          updatedAt: now
+        }
+      ]);
+      router.refresh();
+    } finally {
+      setPendingItemId(null);
+    }
+  }
+
+  async function handleUnclaim(itemId: string) {
+    if (pendingItemId) {
+      return;
+    }
+
+    setPendingItemId(itemId);
+
+    try {
+      const response = await fetch(`/api/items/${itemId}/clear-claims`, {
+        method: "POST"
+      });
+
+      if (!response.ok) {
+        return;
+      }
+
+      setClaimRows((current) => current.filter((claim) => claim.itemId !== itemId));
+      router.refresh();
+    } finally {
+      setPendingItemId(null);
+    }
+  }
+
+  return (
+    <div className="event-summary-items">
+      {items.map((item) => {
+        const itemClaims = claimRows.filter((claim) => claim.itemId === item.id);
+        const claimParticipants = itemClaims
+          .map((claim) => participantsById[claim.participantId])
+          .filter(Boolean) as Participant[];
+        const claimNames = claimParticipants.map((participant) => participant.displayName);
+        const isOpen = itemClaims.length === 0;
+        const isShared = itemClaims.length > 1;
+        const isClaimedByViewer =
+          !!viewerParticipantId &&
+          itemClaims.length === 1 &&
+          itemClaims[0]?.participantId === viewerParticipantId;
+
+        return (
+          <article
+            className={isOpen ? "event-summary-item-card open" : "event-summary-item-card"}
+            key={item.id}
+          >
+            {isOpen ? <div className="event-summary-open-ribbon">Open</div> : null}
+
+            <div className="event-summary-item-main">
+              <div
+                className={
+                  isOpen
+                    ? "event-summary-item-icon tertiary"
+                    : isShared
+                      ? "event-summary-item-icon secondary"
+                      : "event-summary-item-icon primary"
+                }
+              >
+                <EventSummaryIcon icon={getItemIcon(item.name)} />
+              </div>
+
+              <div className="event-summary-item-body">
+                <strong>{item.name}</strong>
+                <span className={isOpen ? "event-summary-item-meta open" : "event-summary-item-meta"}>
+                  {isOpen ? "UNCLAIMED" : `Claimed by ${claimNames.join(", ")}`}
+                </span>
+              </div>
+            </div>
+
+            {!isOpen && claimParticipants.length ? (
+              <div className="event-summary-item-claimers">
+                <div className="event-summary-item-avatar-stack">
+                  {claimParticipants.slice(0, 3).map((participant) => (
+                    <div className="event-summary-avatar tone-claimed" key={participant.id}>
+                      {getInitials(participant.displayName)}
+                    </div>
+                  ))}
+                  {claimParticipants.length > 3 ? (
+                    <div className="event-summary-avatar tone-muted">
+                      +{claimParticipants.length - 3}
+                    </div>
+                  ) : null}
+                </div>
+                <span className="event-summary-item-claimer-label">
+                  {claimNames.slice(0, 2).join(", ")}
+                </span>
+              </div>
+            ) : null}
+
+            <div className="event-summary-item-footer">
+              <strong className="event-summary-item-price">
+                {formatCurrency(item.totalPrice, currency)}
+              </strong>
+
+              <div className="event-summary-item-actions">
+                {isOpen && viewerParticipantId ? (
+                  <button
+                    className="event-summary-item-claim"
+                    disabled={pendingItemId === item.id}
+                    onClick={() => handleClaim(item)}
+                    type="button"
+                  >
+                    {pendingItemId === item.id ? "Claiming..." : "Claim"}
+                  </button>
+                ) : isClaimedByViewer ? (
+                  <button
+                    className="event-summary-item-claim ghost"
+                    disabled={pendingItemId === item.id}
+                    onClick={() => handleUnclaim(item.id)}
+                    type="button"
+                  >
+                    {pendingItemId === item.id ? "Updating..." : "Unclaim"}
+                  </button>
+                ) : (
+                  <span className={isShared ? "event-summary-item-tag shared" : "event-summary-item-tag"}>
+                    {isShared ? "Shared" : "Claimed"}
+                  </span>
+                )}
+              </div>
+            </div>
+          </article>
+        );
+      })}
+    </div>
+  );
+}

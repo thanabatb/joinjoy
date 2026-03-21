@@ -1,6 +1,7 @@
 import { ensureEventEditable } from "@/lib/guards/ensure-event-editable";
 import { generateShareToken } from "@/lib/utils/token";
 import type { Event, EventOverview } from "@/types/event";
+import type { Participant } from "@/types/participant";
 import { getStore } from "./mock-store";
 
 function getTotalAmount(eventId: string) {
@@ -72,7 +73,7 @@ export function createEvent(input: {
   };
 
   store.events.push(event);
-  store.participants.push({
+  const hostParticipant: Participant = {
     id: crypto.randomUUID(),
     eventId: event.id,
     displayName: input.hostName,
@@ -82,9 +83,10 @@ export function createEvent(input: {
     browserFingerprint: null,
     createdAt: now,
     updatedAt: now
-  });
+  };
+  store.participants.push(hostParticipant);
 
-  return event;
+  return { event, hostParticipant };
 }
 
 export function updateEventByShareToken(

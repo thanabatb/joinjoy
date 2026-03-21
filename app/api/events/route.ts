@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 import { createEvent, listEvents } from "@/lib/repositories/events";
+import {
+  getParticipantSessionCookieName,
+  getParticipantSessionCookieOptions
+} from "@/lib/session/participant-session";
 import { createEventSchema } from "@/lib/validations/event";
 
 export async function GET() {
@@ -21,11 +25,18 @@ export async function POST(request: Request) {
     );
   }
 
-  const event = createEvent(payload.data);
-
-  return NextResponse.json({
+  const { event, hostParticipant } = createEvent(payload.data);
+  const response = NextResponse.json({
     id: event.id,
     shareToken: event.shareToken,
     status: event.status
   });
+
+  response.cookies.set(
+    getParticipantSessionCookieName(event.shareToken),
+    hostParticipant.id,
+    getParticipantSessionCookieOptions()
+  );
+
+  return response;
 }
