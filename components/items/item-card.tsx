@@ -22,6 +22,9 @@ export function ItemCard({
         </div>
         <StatusBadge status={item.status} />
       </div>
+      <div className="stamp-row">
+        <span className="stamp-chip">{item.assignmentMode.replaceAll("_", " ")}</span>
+      </div>
       <div className="detail-row">
         <span className="muted">Item total</span>
         <strong>{formatCurrency(item.totalPrice, currency)}</strong>

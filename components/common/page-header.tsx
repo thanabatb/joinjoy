@@ -12,7 +12,7 @@ export function PageHeader({
   actions?: React.ReactNode;
 }) {
   return (
-    <header className="hero-panel stack">
+    <header className="hero-panel paper-cluster stack">
       <div className="toolbar">
         <div className="eyebrow">{eyebrow}</div>
         <Link className="button-ghost" href="/">

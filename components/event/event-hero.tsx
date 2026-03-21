@@ -6,7 +6,7 @@ import { StatusBadge } from "@/components/common/status-badge";
 
 export function EventHero({ event }: { event: EventOverview }) {
   return (
-    <section className="hero-panel stack">
+    <section className="hero-panel paper-cluster stack">
       <div className="toolbar">
         <div className="eyebrow">Event overview</div>
         <StatusBadge status={event.status} />
@@ -16,6 +16,11 @@ export function EventHero({ event }: { event: EventOverview }) {
         <p className="lede">
           {event.venueName || "Venue to be decided"} · {formatEventDate(event.occurredAt)}
         </p>
+      </div>
+      <div className="stamp-row">
+        <span className="stamp-chip">Shared event</span>
+        <span className="stamp-chip">{event.currency}</span>
+        <span className="stamp-chip">{event.hostName} hosting</span>
       </div>
       <div className="inline-list">
         <div className="stat-card stack">
