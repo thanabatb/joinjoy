@@ -3,12 +3,21 @@ import { markParticipantPaid } from "@/lib/repositories/payments";
 import { normalizeShareToken } from "@/lib/utils/share-token";
 
 export async function POST(
-  _request: Request,
-  context: { params: Promise<{ shareToken: string; participantId: string }> }
+  request: Request,
+  context: { params: Promise<{ shareToken: string }> }
 ) {
-  const { shareToken: rawShareToken, participantId } = await context.params;
+  const { shareToken: rawShareToken } = await context.params;
   const shareToken = normalizeShareToken(rawShareToken);
-  const payment = await markParticipantPaid(shareToken, participantId);
+  const body = (await request.json().catch(() => null)) as { participantId?: string } | null;
+
+  if (!body?.participantId) {
+    return NextResponse.json(
+      { error: { code: "PARTICIPANT_REQUIRED", message: "Participant ID is required." } },
+      { status: 400 }
+    );
+  }
+
+  const payment = await markParticipantPaid(shareToken, body.participantId);
 
   if (!payment) {
     return NextResponse.json(

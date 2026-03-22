@@ -15,8 +15,10 @@ export function MarkPaidButton({
 
   async function markPaid() {
     setIsPending(true);
-    await fetch(`/api/events/${shareToken}/payments/${participantId}/mark-paid`, {
-      method: "POST"
+    await fetch(`/api/events/${shareToken}/payments/mark-paid`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ participantId })
     });
     router.refresh();
   }

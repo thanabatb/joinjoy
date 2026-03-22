@@ -58,6 +58,7 @@ export default async function EventSummaryPage({
 
   const resolvedItems = items.filter((item) => item.status !== "unclaimed").length;
   const progress = items.length === 0 ? 0 : Math.round((resolvedItems / items.length) * 100);
+  const viewerClaimCount = claims.filter((claim) => claim.participantId === viewerParticipant.id).length;
 
   return (
     <>
@@ -158,6 +159,20 @@ export default async function EventSummaryPage({
             <Link className="event-summary-review-totals" href={`/event/${shareToken}/host`}>
               Review totals
             </Link>
+          </section>
+        ) : null}
+
+        {!viewerParticipant.isHost ? (
+          <section className="event-summary-member-actions">
+            {viewerClaimCount > 0 ? (
+              <Link className="event-summary-member-link" href={`/event/${shareToken}/my-summary`}>
+                View my summary
+              </Link>
+            ) : (
+              <p className="event-summary-member-note">
+                Claim an item first, then your running total will show up here.
+              </p>
+            )}
           </section>
         ) : null}
 

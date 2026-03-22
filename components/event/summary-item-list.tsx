@@ -227,18 +227,13 @@ export function SummaryItemList({
         const claimParticipants = itemClaims
           .map((claim) => participantsById[claim.participantId])
           .filter(Boolean) as Participant[];
-        const claimNames = claimParticipants.map((participant) => participant.displayName);
         const isOpen = itemClaims.length === 0;
         const isShared = itemClaims.length > 1;
         const isClaimedByViewer =
           !!viewerParticipantId &&
           itemClaims.some((claim) => claim.participantId === viewerParticipantId);
         const canClaim = !!viewerParticipantId && !isClaimedByViewer;
-        const metaText = isOpen
-          ? "UNCLAIMED"
-          : isShared
-            ? `Shared by ${claimParticipants.length} people`
-            : "CLAIMED";
+        const metaText = isOpen ? "UNCLAIMED" : isShared ? `Shared by ${itemClaims.length} people` : "CLAIMED";
 
         return (
           <article
