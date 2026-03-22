@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "cleanup:test-data": "node scripts/cleanup-test-events.mjs --apply",
+    "cleanup:test-data:dry": "node scripts/cleanup-test-events.mjs"
   },
   "dependencies": {
     "next": "15.2.0",
@@ -15,6 +19,7 @@
     "zod": "3.24.2"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "@types/node": "22.13.9",
     "@types/react": "19.0.10",
     "@types/react-dom": "19.0.4",
