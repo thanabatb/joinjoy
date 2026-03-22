@@ -71,7 +71,7 @@ export function AddItemForm({
                 id="item-name-page"
                 value={form.name}
                 onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
-                placeholder="e.g., IPA Beer"
+                placeholder="What item should we add from the bill?"
                 required
               />
             </div>
@@ -89,7 +89,7 @@ export function AddItemForm({
                     onChange={(event) =>
                       setForm((current) => ({ ...current, price: event.target.value }))
                     }
-                    placeholder="0.00"
+                    placeholder="Enter item price"
                   />
                 </div>
               </div>
@@ -104,12 +104,12 @@ export function AddItemForm({
                   onChange={(event) =>
                     setForm((current) => ({ ...current, quantity: event.target.value }))
                   }
-                  placeholder="1"
+                  placeholder="How many?"
                 />
               </div>
             </div>
             <button className="add-expense-add-button" disabled={isPending} type="submit">
-              {isPending ? "Adding..." : submitLabel ?? "Add to List"}
+              {isPending ? "Adding..." : submitLabel ?? "Add this item"}
             </button>
           </div>
         </>
@@ -126,7 +126,7 @@ export function AddItemForm({
                 id="item-name"
                 value={form.name}
                 onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
-                placeholder="Truffle fries"
+                placeholder="Add an item name from the bill"
                 required
               />
             </div>
@@ -170,7 +170,7 @@ export function AddItemForm({
           </div>
           <div className="button-row">
             <button className="button-secondary" disabled={isPending} type="submit">
-              {isPending ? "Saving..." : submitLabel ?? "Add item"}
+              {isPending ? "Saving..." : submitLabel ?? "Add this item"}
             </button>
           </div>
         </>

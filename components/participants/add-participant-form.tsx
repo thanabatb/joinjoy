@@ -44,7 +44,7 @@ export function AddParticipantForm({ shareToken }: { shareToken: string }) {
           id="participant-name"
           value={displayName}
           onChange={(event) => setDisplayName(event.target.value)}
-          placeholder="A new friend joins the table"
+          placeholder="Add a name so they can join and claim items"
           required
         />
       </div>

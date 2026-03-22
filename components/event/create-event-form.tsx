@@ -34,16 +34,80 @@ function formatDateForRequest(date: string, time: string) {
   return new Date(`${date}T${safeTime}`).toISOString();
 }
 
+type CreateEventErrors = Partial<Record<keyof typeof initialState, string>> & {
+  form?: string;
+};
+
+function validateCreateEvent(form: typeof initialState): CreateEventErrors {
+  const errors: CreateEventErrors = {};
+
+  if (!form.title.trim()) {
+    errors.title = "Oops, give this event a name.";
+  }
+
+  if (!form.hostName.trim()) {
+    errors.hostName = "Oops, who’s hosting this one?";
+  }
+
+  if (!form.occurredDate) {
+    errors.occurredDate = "Pick a date for this one.";
+  }
+
+  if (!form.occurredTime) {
+    errors.occurredTime = "Pick a time too.";
+  }
+
+  if (form.serviceChargeType === "custom_amount") {
+    const amount = Number(form.serviceChargeRate);
+
+    if (!form.serviceChargeRate || Number.isNaN(amount) || amount < 0) {
+      errors.serviceChargeRate = "Add the service charge amount.";
+    }
+  }
+
+  if (form.vatType === "custom_amount") {
+    const amount = Number(form.vatRate);
+
+    if (!form.vatRate || Number.isNaN(amount) || amount < 0) {
+      errors.vatRate = "Add the VAT amount.";
+    }
+  }
+
+  return errors;
+}
+
 export function CreateEventForm({ formId }: { formId: string }) {
   const router = useRouter();
   const [form, setForm] = useState(initialState);
-  const [error, setError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<CreateEventErrors>({});
   const [isPending, setIsPending] = useState(false);
+
+  function updateField<K extends keyof typeof initialState>(key: K, value: (typeof initialState)[K]) {
+    setForm((current) => ({ ...current, [key]: value }));
+    setErrors((current) => {
+      if (!current[key] && !current.form) {
+        return current;
+      }
+
+      return {
+        ...current,
+        [key]: undefined,
+        form: undefined
+      };
+    });
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const nextErrors = validateCreateEvent(form);
+
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors);
+      return;
+    }
+
     setIsPending(true);
-    setError(null);
+    setErrors({});
 
     const response = await fetch("/api/events", {
       method: "POST",
@@ -64,7 +128,8 @@ export function CreateEventForm({ formId }: { formId: string }) {
     const payload = await response.json();
 
     if (!response.ok) {
-      setError(payload.error?.message ?? "Unable to create the event.");
+      const message = payload.error?.message ?? "Unable to create the event.";
+      setErrors((current) => ({ ...current, form: message }));
       setIsPending(false);
       return;
     }
@@ -73,64 +138,70 @@ export function CreateEventForm({ formId }: { formId: string }) {
   }
 
   return (
-    <form className="create-form" id={formId} onSubmit={handleSubmit}>
+    <form className="create-form" id={formId} noValidate onSubmit={handleSubmit}>
       <section className="create-card">
         <div className="create-card-glow" />
         <div className="stack" style={{ gap: 22, position: "relative", zIndex: 1 }}>
           <div className="field">
             <label htmlFor="title">What's the occasion?</label>
             <input
+              aria-invalid={Boolean(errors.title)}
+              className={errors.title ? "field-input-error" : undefined}
               id="title"
               value={form.title}
-              onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
-              placeholder="Jazz Night"
-              required
+              onChange={(event) => updateField("title", event.target.value)}
+              placeholder="Give this event a short name"
             />
+            {errors.title ? <p className="field-error">{errors.title}</p> : null}
           </div>
 
           <div className="field">
-            <label htmlFor="venue">Where to? Optional</label>
+            <label htmlFor="venue">Where to? (Optional)</label>
             <input
               id="venue"
               value={form.venueName}
-              onChange={(event) => setForm((current) => ({ ...current, venueName: event.target.value }))}
-              placeholder="The Local Bistro"
+              onChange={(event) => updateField("venueName", event.target.value)}
+              placeholder="Add the venue if you already know it"
             />
           </div>
 
           <div className="field">
             <label htmlFor="hostName">Who's hosting?</label>
             <input
+              aria-invalid={Boolean(errors.hostName)}
+              className={errors.hostName ? "field-input-error" : undefined}
               id="hostName"
               value={form.hostName}
-              onChange={(event) => setForm((current) => ({ ...current, hostName: event.target.value }))}
-              placeholder="Thanabat"
-              required
+              onChange={(event) => updateField("hostName", event.target.value)}
+              placeholder="What should everyone call the host?"
             />
+            {errors.hostName ? <p className="field-error">{errors.hostName}</p> : null}
           </div>
 
           <div className="create-two-up">
             <div className="field">
               <label htmlFor="occurredDate">When?</label>
               <input
+                aria-invalid={Boolean(errors.occurredDate)}
+                className={errors.occurredDate ? "field-input-error" : undefined}
                 id="occurredDate"
                 type="date"
                 value={form.occurredDate}
-                onChange={(event) =>
-                  setForm((current) => ({ ...current, occurredDate: event.target.value }))
-                }
+                onChange={(event) => updateField("occurredDate", event.target.value)}
               />
+              {errors.occurredDate ? <p className="field-error">{errors.occurredDate}</p> : null}
             </div>
             <div className="field">
               <label htmlFor="occurredTime">Time</label>
               <input
+                aria-invalid={Boolean(errors.occurredTime)}
+                className={errors.occurredTime ? "field-input-error" : undefined}
                 id="occurredTime"
                 type="time"
                 value={form.occurredTime}
-                onChange={(event) =>
-                  setForm((current) => ({ ...current, occurredTime: event.target.value }))
-                }
+                onChange={(event) => updateField("occurredTime", event.target.value)}
               />
+              {errors.occurredTime ? <p className="field-error">{errors.occurredTime}</p> : null}
             </div>
           </div>
         </div>
@@ -141,7 +212,6 @@ export function CreateEventForm({ formId }: { formId: string }) {
           <h3 className="create-settings-title">Cost Settings</h3>
           <div className="create-currency-pill">
             <span>THB</span>
-            <span className="muted">MVP</span>
           </div>
         </div>
 
@@ -196,15 +266,18 @@ export function CreateEventForm({ formId }: { formId: string }) {
               <div className="field">
                 <label htmlFor="serviceChargeRate">Custom service charge amount</label>
                 <input
+                  aria-invalid={Boolean(errors.serviceChargeRate)}
+                  className={errors.serviceChargeRate ? "field-input-error" : undefined}
                   id="serviceChargeRate"
                   min="0"
                   step="0.01"
                   type="number"
                   value={form.serviceChargeRate}
-                  onChange={(event) =>
-                    setForm((current) => ({ ...current, serviceChargeRate: event.target.value }))
-                  }
+                  onChange={(event) => updateField("serviceChargeRate", event.target.value)}
                 />
+                {errors.serviceChargeRate ? (
+                  <p className="field-error">{errors.serviceChargeRate}</p>
+                ) : null}
               </div>
             ) : null}
           </div>
@@ -259,13 +332,16 @@ export function CreateEventForm({ formId }: { formId: string }) {
               <div className="field">
                 <label htmlFor="vatRate">Custom VAT amount</label>
                 <input
+                  aria-invalid={Boolean(errors.vatRate)}
+                  className={errors.vatRate ? "field-input-error" : undefined}
                   id="vatRate"
                   min="0"
                   step="0.01"
                   type="number"
                   value={form.vatRate}
-                  onChange={(event) => setForm((current) => ({ ...current, vatRate: event.target.value }))}
+                  onChange={(event) => updateField("vatRate", event.target.value)}
                 />
+                {errors.vatRate ? <p className="field-error">{errors.vatRate}</p> : null}
               </div>
             ) : null}
           </div>
@@ -280,7 +356,7 @@ export function CreateEventForm({ formId }: { formId: string }) {
         </p>
       </section>
 
-      {error ? <div className="notice">{error}</div> : null}
+      {errors.form ? <div className="notice">{errors.form}</div> : null}
       {isPending ? <div className="notice">Creating your event...</div> : null}
     </form>
   );
