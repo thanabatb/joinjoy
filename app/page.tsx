@@ -1,31 +1,41 @@
 import Link from "next/link";
-import { getEventOverviewByShareToken } from "@/lib/repositories/events";
-import { formatCurrency } from "@/lib/utils/currency";
+import { HomeEventTabs } from "@/components/home/event-tabs";
 
-const recentEvents = [
+const ongoingEvents = [
   {
     title: "Jazz Night at Jazz Bar",
     when: "Yesterday",
-    direction: "You owe",
-    amount: 42,
-    tone: "owed",
-    accent: "jazz"
+    href: "/event/jazz-night-demo/summary",
+    accent: "jazz",
+    status: "claiming",
+    note: "Claims are still in progress."
   },
   {
     title: "Office Lunch",
     when: "Thursday",
-    direction: "You're owed",
-    amount: 15.5,
-    tone: "owed-to-you",
-    accent: "lunch"
-  },
+    href: "/event/jazz-night-demo/summary",
+    accent: "lunch",
+    status: "joined",
+    note: "Waiting for a few people to finish claiming."
+  }
+] as const;
+
+const doneEvents = [
   {
     title: "BBQ Friday",
     when: "Last week",
-    direction: "Settled",
-    amount: 0,
-    tone: "settled",
-    accent: "bbq"
+    href: "/event/jazz-night-demo/host",
+    accent: "bbq",
+    status: "settled",
+    note: "Fully cleared and ready to review."
+  },
+  {
+    title: "Team Brunch",
+    when: "Last month",
+    href: "/event/jazz-night-demo/host",
+    accent: "lunch",
+    status: "finalized",
+    note: "Final totals locked."
   }
 ] as const;
 
@@ -48,9 +58,6 @@ const howItWorks = [
 ] as const;
 
 export default function HomePage() {
-  const demoEvent = getEventOverviewByShareToken("jazz-night-demo");
-  const liveAmount = demoEvent ? formatCurrency(demoEvent.totalAmount, demoEvent.currency) : "$0.00";
-
   return (
     <>
       <main className="page-shell home-page">
@@ -87,70 +94,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="home-summary-shell">
-          <div className="home-summary-card">
-            <div className="toolbar">
-              <div className="stack" style={{ gap: 6 }}>
-                <p className="summary-kicker">Ongoing balance</p>
-                <h2 className="home-summary-amount">{liveAmount}</h2>
-              </div>
-              <span className="status-badge claiming">Splitting in progress</span>
-            </div>
-            <div className="grid-2">
-              <div className="home-mini-stat">
-                <div className="home-mini-icon">P</div>
-                <div>
-                  <p className="home-mini-label">Participants</p>
-                  <p className="home-mini-value">{demoEvent?.participantCount ?? 0}</p>
-                </div>
-              </div>
-              <div className="home-mini-stat">
-                <div className="home-mini-icon">I</div>
-                <div>
-                  <p className="home-mini-label">Items</p>
-                  <p className="home-mini-value">{demoEvent?.itemCount ?? 0}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="home-summary-badge">+</div>
-        </section>
-
-        <section className="stack" style={{ gap: 18 }}>
-          <div className="toolbar">
-            <h3 className="home-section-title">Your Events</h3>
-            <Link className="home-inline-link" href="/event/jazz-night-demo">
-              View all
-            </Link>
-          </div>
-          <div className="home-event-list">
-            {recentEvents.map((event) => (
-              <Link
-                className="home-event-card"
-                href="/event/jazz-night-demo"
-                key={`${event.title}-${event.when}`}
-              >
-                <div className={`home-event-thumb ${event.accent}`} />
-                <div className="stack" style={{ gap: 4, flex: 1 }}>
-                  <strong>{event.title}</strong>
-                  <span className="muted home-event-meta">{event.when}</span>
-                </div>
-                <div className="home-event-amount">
-                  {event.tone === "settled" ? (
-                    <span className="home-settled-badge">Settled</span>
-                  ) : (
-                    <>
-                      <span className="muted home-event-meta">{event.direction}</span>
-                      <strong className={event.tone === "owed" ? "home-owed" : "home-owed-to-you"}>
-                        {formatCurrency(event.amount, "USD")}
-                      </strong>
-                    </>
-                  )}
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
+        <HomeEventTabs done={doneEvents} ongoing={ongoingEvents} />
 
         <section className="home-steps">
           <div className="stack" style={{ gap: 8, textAlign: "center" }}>
