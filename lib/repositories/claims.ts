@@ -10,6 +10,19 @@ async function refreshItemStatus(itemId: string) {
   await supabaseRpc("refresh_item_status", { p_item_id: itemId }).catch(() => null);
 }
 
+async function listClaimsByItemId(itemId: string) {
+  const rows =
+    (await supabaseRest<Record<string, unknown>[]>("item_claims", {
+      query: {
+        select: "*",
+        item_id: `eq.${itemId}`,
+        order: "created_at.asc"
+      }
+    })) ?? [];
+
+  return rows.map(mapClaimRow);
+}
+
 async function replaceClaims(
   itemId: string,
   rows: Array<Pick<ItemClaim, "participantId" | "splitAmount" | "splitRatio">>,
@@ -74,17 +87,15 @@ export async function claimItemForParticipant(itemId: string, participantId: str
     return false;
   }
 
-  return replaceClaims(
-    itemId,
-    [
-      {
-        participantId,
-        splitAmount: item.totalPrice,
-        splitRatio: 1
-      }
-    ],
-    "participant"
+  const claims = await listClaimsByItemId(itemId);
+  const participantIds = Array.from(
+    new Set([
+      ...claims.map((claim) => claim.participantId),
+      participantId
+    ])
   );
+
+  return replaceClaims(itemId, splitItemEvenly(item.totalPrice, participantIds), "participant");
 }
 
 export async function splitItemAcrossParticipants(itemId: string, participantIds: string[]) {
@@ -120,4 +131,39 @@ export async function clearClaimsForItem(itemId: string) {
   });
   await refreshItemStatus(itemId);
   return true;
+}
+
+export async function removeParticipantClaim(itemId: string, participantId: string) {
+  const item = await getItemById(itemId);
+
+  if (!item) {
+    return false;
+  }
+
+  const event = await getEventById(item.eventId);
+
+  if (!event) {
+    return false;
+  }
+
+  ensureItemEditable(event);
+
+  const claims = await listClaimsByItemId(itemId);
+  const remainingParticipantIds = claims
+    .map((claim) => claim.participantId)
+    .filter((currentParticipantId) => currentParticipantId !== participantId);
+
+  if (remainingParticipantIds.length === claims.length) {
+    return true;
+  }
+
+  if (remainingParticipantIds.length === 0) {
+    return clearClaimsForItem(itemId);
+  }
+
+  return replaceClaims(
+    itemId,
+    splitItemEvenly(item.totalPrice, remainingParticipantIds),
+    "participant"
+  );
 }

@@ -16,3 +16,7 @@ export const claimItemSchema = z.object({
 export const splitItemSchema = z.object({
   participantIds: z.array(z.string().trim().min(1)).min(1, "At least one participant is required.")
 });
+
+export const clearClaimsSchema = z.object({
+  participantId: z.string().trim().min(1).optional()
+});

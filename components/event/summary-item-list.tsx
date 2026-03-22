@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import { splitItemEvenly } from "@/lib/calculations/split-item";
 import { formatCurrency } from "@/lib/utils/currency";
 import type { ItemClaim } from "@/types/claim";
 import type { Item } from "@/types/item";
@@ -119,6 +120,22 @@ export function SummaryItemList({
     [participants]
   );
 
+  function buildOptimisticClaims(item: Item, participantIds: string[]) {
+    const now = new Date().toISOString();
+
+    return splitItemEvenly(item.totalPrice, participantIds).map((entry) => ({
+      id: `local-${item.id}-${entry.participantId}`,
+      eventId: item.eventId,
+      itemId: item.id,
+      participantId: entry.participantId,
+      splitAmount: entry.splitAmount,
+      splitRatio: entry.splitRatio,
+      createdByType: "participant" as const,
+      createdAt: now,
+      updatedAt: now
+    }));
+  }
+
   async function handleClaim(item: Item) {
     if (!viewerParticipantId || pendingItemId) {
       return;
@@ -137,21 +154,20 @@ export function SummaryItemList({
         return;
       }
 
-      const now = new Date().toISOString();
-      setClaimRows((current) => [
-        ...current.filter((claim) => claim.itemId !== item.id),
-        {
-          id: `local-${item.id}-${viewerParticipantId}`,
-          eventId: item.eventId,
-          itemId: item.id,
-          participantId: viewerParticipantId,
-          splitAmount: item.totalPrice,
-          splitRatio: 1,
-          createdByType: "participant",
-          createdAt: now,
-          updatedAt: now
-        }
-      ]);
+      setClaimRows((current) => {
+        const itemClaims = current.filter((claim) => claim.itemId === item.id);
+        const participantIds = Array.from(
+          new Set([
+            ...itemClaims.map((claim) => claim.participantId),
+            viewerParticipantId
+          ])
+        );
+
+        return [
+          ...current.filter((claim) => claim.itemId !== item.id),
+          ...buildOptimisticClaims(item, participantIds)
+        ];
+      });
       router.refresh();
     } finally {
       setPendingItemId(null);
@@ -167,14 +183,32 @@ export function SummaryItemList({
 
     try {
       const response = await fetch(`/api/items/${itemId}/clear-claims`, {
-        method: "POST"
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ participantId: viewerParticipantId })
       });
 
       if (!response.ok) {
         return;
       }
 
-      setClaimRows((current) => current.filter((claim) => claim.itemId !== itemId));
+      setClaimRows((current) => {
+        const targetItem = items.find((item) => item.id === itemId);
+
+        if (!targetItem || !viewerParticipantId) {
+          return current;
+        }
+
+        const remainingParticipantIds = current
+          .filter((claim) => claim.itemId === itemId)
+          .map((claim) => claim.participantId)
+          .filter((participantId) => participantId !== viewerParticipantId);
+
+        return [
+          ...current.filter((claim) => claim.itemId !== itemId),
+          ...buildOptimisticClaims(targetItem, remainingParticipantIds)
+        ];
+      });
       router.refresh();
     } finally {
       setPendingItemId(null);
@@ -193,8 +227,8 @@ export function SummaryItemList({
         const isShared = itemClaims.length > 1;
         const isClaimedByViewer =
           !!viewerParticipantId &&
-          itemClaims.length === 1 &&
-          itemClaims[0]?.participantId === viewerParticipantId;
+          itemClaims.some((claim) => claim.participantId === viewerParticipantId);
+        const canClaim = !!viewerParticipantId && !isClaimedByViewer;
 
         return (
           <article
@@ -219,7 +253,11 @@ export function SummaryItemList({
               <div className="event-summary-item-body">
                 <strong>{item.name}</strong>
                 <span className={isOpen ? "event-summary-item-meta open" : "event-summary-item-meta"}>
-                  {isOpen ? "UNCLAIMED" : `Claimed by ${claimNames.join(", ")}`}
+                  {isOpen
+                    ? "UNCLAIMED"
+                    : isShared
+                      ? `Shared by ${claimNames.join(", ")}`
+                      : `Claimed by ${claimNames.join(", ")}`}
                 </span>
               </div>
             </div>
@@ -250,14 +288,14 @@ export function SummaryItemList({
               </strong>
 
               <div className="event-summary-item-actions">
-                {isOpen && viewerParticipantId ? (
+                {canClaim ? (
                   <button
                     className="event-summary-item-claim"
                     disabled={pendingItemId === item.id}
                     onClick={() => handleClaim(item)}
                     type="button"
                   >
-                    {pendingItemId === item.id ? "Claiming..." : "Claim"}
+                    {pendingItemId === item.id ? "Updating..." : "Claim"}
                   </button>
                 ) : isClaimedByViewer ? (
                   <button
