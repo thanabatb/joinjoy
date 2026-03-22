@@ -28,6 +28,7 @@ export default async function PaymentPage({
   return (
     <main className="page-shell stack">
       <PageHeader
+        backHref={`/event/${shareToken}/host`}
         eyebrow="Screen 13 and 14"
         title="Settle the event"
         description="After the event is finalized, participants can see the host payout details and move themselves toward paid."

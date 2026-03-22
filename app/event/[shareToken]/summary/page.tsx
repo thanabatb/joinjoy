@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
+import { HistoryBackButton } from "@/components/common/history-back-button";
 import { ShareActions } from "@/components/event/share-actions";
 import { SummaryItemList } from "@/components/event/summary-item-list";
 import { listClaimsByEventId } from "@/lib/repositories/claims";
@@ -61,9 +62,13 @@ export default async function EventSummaryPage({
       <main className="page-shell event-summary-page">
         <header className="event-summary-topbar">
           <div className="event-summary-topbar-row">
-            <Link aria-label="Back to event" className="create-back" href={`/event/${shareToken}`}>
+            <HistoryBackButton
+              ariaLabel="Go back"
+              className="create-back"
+              fallbackHref="/"
+            >
               <span>←</span>
-            </Link>
+            </HistoryBackButton>
             <h1 className="event-summary-topbar-title">Event Details</h1>
           </div>
           <ShareActions shareToken={shareToken} variant="icon" />

@@ -22,6 +22,7 @@ export default async function ClaimPage({
   return (
     <main className="page-shell stack">
       <PageHeader
+        backHref={`/event/${shareToken}/summary`}
         eyebrow="Screen 7"
         title="Claim what you had"
         description="This first pass renders the claim surfaces and item groups. The next implementation step is wiring interactive claim and split actions to the existing APIs."

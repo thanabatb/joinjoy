@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { HistoryBackButton } from "@/components/common/history-back-button";
 import { CreateEventForm } from "@/components/event/create-event-form";
 
 export default function CreatePage() {
@@ -7,9 +7,9 @@ export default function CreatePage() {
       <main className="page-shell create-page">
         <header className="create-topbar">
           <div className="create-topbar-row">
-            <Link aria-label="Back home" className="create-back" href="/">
+            <HistoryBackButton ariaLabel="Back home" className="create-back" fallbackHref="/">
               <span>←</span>
-            </Link>
+            </HistoryBackButton>
             <h1 className="create-topbar-title">Create Event</h1>
           </div>
         </header>

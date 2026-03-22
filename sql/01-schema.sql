@@ -12,6 +12,7 @@ create table if not exists public.events (
   share_token text not null unique,
   title text not null,
   venue_name text,
+  occurred_at timestamptz not null default now(),
   currency text not null default 'THB',
   service_charge_type text not null default 'percentage'
     check (service_charge_type in ('none', 'percentage', 'custom_amount')),

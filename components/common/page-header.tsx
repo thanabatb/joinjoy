@@ -1,11 +1,13 @@
-import Link from "next/link";
+import { HistoryBackButton } from "@/components/common/history-back-button";
 
 export function PageHeader({
+  backHref = "/",
   eyebrow,
   title,
   description,
   actions
 }: {
+  backHref?: string;
   eyebrow: string;
   title: string;
   description: string;
@@ -15,9 +17,9 @@ export function PageHeader({
     <header className="hero-panel paper-cluster stack">
       <div className="toolbar">
         <div className="eyebrow">{eyebrow}</div>
-        <Link className="button-ghost" href="/">
-          Back home
-        </Link>
+        <HistoryBackButton className="button-ghost" fallbackHref={backHref}>
+          Back
+        </HistoryBackButton>
       </div>
       <div className="stack">
         <h1 className="section-title">{title}</h1>

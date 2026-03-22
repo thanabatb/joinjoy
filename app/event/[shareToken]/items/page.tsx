@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { HistoryBackButton } from "@/components/common/history-back-button";
 import { AddItemForm } from "@/components/items/add-item-form";
 import { getEventOverviewByShareToken } from "@/lib/repositories/events";
 import { listItemsByShareToken } from "@/lib/repositories/items";
@@ -40,9 +41,13 @@ export default async function AddExpensesPage({
       <main className="page-shell add-items-page">
         <header className="add-items-topbar">
           <div className="add-items-topbar-row">
-            <Link aria-label="Back to event" className="create-back" href={`/event/${shareToken}`}>
+            <HistoryBackButton
+              ariaLabel="Go back"
+              className="create-back"
+              fallbackHref={`/event/${shareToken}/summary`}
+            >
               <span>←</span>
-            </Link>
+            </HistoryBackButton>
             <h1 className="add-items-topbar-title">Add Expenses</h1>
           </div>
           <button className="add-items-more" type="button">
@@ -118,7 +123,7 @@ export default async function AddExpensesPage({
           <Link className="button add-items-footer-button" href={`/event/${shareToken}/summary`}>
             Review Event
           </Link>
-          <Link className="add-items-cancel" href={`/event/${shareToken}`}>
+          <Link className="add-items-cancel" href={`/event/${shareToken}/summary`}>
             Cancel
           </Link>
         </div>

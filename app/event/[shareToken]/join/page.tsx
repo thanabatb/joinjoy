@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
+import { HistoryBackButton } from "@/components/common/history-back-button";
 import { JoinEventForm } from "@/components/event/join-event-form";
 import { getEventOverviewByShareToken } from "@/lib/repositories/events";
 import { listParticipantsByShareToken } from "@/lib/repositories/participants";
@@ -27,6 +28,11 @@ export default async function JoinEventPage({
 
   return (
     <main className="page-shell join-event-page">
+      <div className="join-event-back-row">
+        <HistoryBackButton ariaLabel="Go back" className="create-back" fallbackHref="/">
+          <span>←</span>
+        </HistoryBackButton>
+      </div>
       <JoinEventForm eventTitle={event.title} shareToken={shareToken} />
     </main>
   );

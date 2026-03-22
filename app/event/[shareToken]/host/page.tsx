@@ -28,6 +28,7 @@ export default async function HostPage({
   return (
     <main className="page-shell stack">
       <PageHeader
+        backHref={`/event/${shareToken}/summary`}
         eyebrow="Screen 10"
         title="Host dashboard"
         description="Monitor completion, resolve edge cases, and finalize only when every item is handled."
