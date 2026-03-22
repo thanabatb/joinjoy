@@ -7,7 +7,7 @@ export async function GET(
   context: { params: Promise<{ shareToken: string }> }
 ) {
   const { shareToken } = await context.params;
-  return NextResponse.json(listItemsByShareToken(shareToken));
+  return NextResponse.json(await listItemsByShareToken(shareToken));
 }
 
 export async function POST(
@@ -30,7 +30,7 @@ export async function POST(
   }
 
   try {
-    const item = addItemToEvent(shareToken, payload.data);
+    const item = await addItemToEvent(shareToken, payload.data);
 
     if (!item) {
       return NextResponse.json(

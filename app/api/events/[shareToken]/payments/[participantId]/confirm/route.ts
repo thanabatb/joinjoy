@@ -6,7 +6,7 @@ export async function POST(
   context: { params: Promise<{ shareToken: string; participantId: string }> }
 ) {
   const { shareToken, participantId } = await context.params;
-  const payment = confirmParticipantPayment(shareToken, participantId);
+  const payment = await confirmParticipantPayment(shareToken, participantId);
 
   if (!payment) {
     return NextResponse.json(

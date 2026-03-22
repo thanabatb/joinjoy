@@ -7,7 +7,7 @@ export async function GET(
   context: { params: Promise<{ shareToken: string }> }
 ) {
   const { shareToken } = await context.params;
-  const event = getEventOverviewByShareToken(shareToken);
+  const event = await getEventOverviewByShareToken(shareToken);
 
   if (!event) {
     return NextResponse.json(
@@ -39,7 +39,7 @@ export async function PATCH(
   }
 
   try {
-    const event = updateEventByShareToken(shareToken, payload.data);
+    const event = await updateEventByShareToken(shareToken, payload.data);
 
     if (!event) {
       return NextResponse.json(

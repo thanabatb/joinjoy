@@ -17,14 +17,14 @@ export default async function EventOverviewPage({
   params: Promise<{ shareToken: string }>;
 }) {
   const { shareToken } = await params;
-  const event = getEventOverviewByShareToken(shareToken);
+  const event = await getEventOverviewByShareToken(shareToken);
 
   if (!event) {
     notFound();
   }
 
-  const participants = listParticipantsByShareToken(shareToken);
-  const items = listItemsByShareToken(shareToken);
+  const participants = await listParticipantsByShareToken(shareToken);
+  const items = await listItemsByShareToken(shareToken);
 
   return (
     <main className="page-shell stack">

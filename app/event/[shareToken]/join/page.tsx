@@ -11,13 +11,13 @@ export default async function JoinEventPage({
   params: Promise<{ shareToken: string }>;
 }) {
   const { shareToken } = await params;
-  const event = getEventOverviewByShareToken(shareToken);
+  const event = await getEventOverviewByShareToken(shareToken);
 
   if (!event) {
     notFound();
   }
 
-  const participants = listParticipantsByShareToken(shareToken);
+  const participants = await listParticipantsByShareToken(shareToken);
   const cookieStore = await cookies();
   const participantId = cookieStore.get(getParticipantSessionCookieName(shareToken))?.value;
 

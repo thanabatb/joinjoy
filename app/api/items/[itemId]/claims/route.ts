@@ -22,7 +22,7 @@ export async function POST(
   }
 
   try {
-    const success = claimItemForParticipant(itemId, payload.data.participantId);
+    const success = await claimItemForParticipant(itemId, payload.data.participantId);
 
     if (!success) {
       return NextResponse.json(

@@ -26,13 +26,13 @@ export default async function AddExpensesPage({
   params: Promise<{ shareToken: string }>;
 }) {
   const { shareToken } = await params;
-  const event = getEventOverviewByShareToken(shareToken);
+  const event = await getEventOverviewByShareToken(shareToken);
 
   if (!event) {
     notFound();
   }
 
-  const items = listItemsByShareToken(shareToken);
+  const items = await listItemsByShareToken(shareToken);
   const unresolvedItems = items.filter((item) => item.status === "unclaimed" || item.status === "partial");
 
   return (

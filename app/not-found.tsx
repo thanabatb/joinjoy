@@ -7,8 +7,8 @@ export default function NotFound() {
         <span className="eyebrow">Not found</span>
         <h1 className="section-title">This event could not be found.</h1>
         <p className="lede">
-          The share token may be wrong, or the mock data has been reset. Start again from home or
-          open the seeded demo event.
+          The share token may be wrong, or this event is not present in the database. Start again
+          from home or open the seeded demo event.
         </p>
         <div className="button-row">
           <Link className="button" href="/">

@@ -8,7 +8,7 @@ export async function POST(
   const { itemId } = await context.params;
 
   try {
-    const success = clearClaimsForItem(itemId);
+    const success = await clearClaimsForItem(itemId);
 
     if (!success) {
       return NextResponse.json(

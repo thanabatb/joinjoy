@@ -22,7 +22,7 @@ export async function PATCH(
   }
 
   try {
-    const item = updateItemById(itemId, payload.data);
+    const item = await updateItemById(itemId, payload.data);
 
     if (!item) {
       return NextResponse.json(
@@ -52,7 +52,7 @@ export async function DELETE(
   const { itemId } = await context.params;
 
   try {
-    const deleted = deleteItemById(itemId);
+    const deleted = await deleteItemById(itemId);
 
     if (!deleted) {
       return NextResponse.json(

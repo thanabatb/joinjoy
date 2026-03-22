@@ -1,60 +1,76 @@
-import { getEventByShareToken } from "@/lib/repositories/events";
 import { ensureEventEditable } from "@/lib/guards/ensure-event-editable";
 import type { Participant } from "@/types/participant";
-import { getStore } from "./mock-store";
+import { getEventByShareToken } from "./events";
+import { mapParticipantRow } from "./mappers";
+import { supabaseRest } from "@/lib/supabase/rest";
 
-export function listParticipantsByShareToken(shareToken: string) {
-  const event = getEventByShareToken(shareToken);
+export async function listParticipantsByShareToken(shareToken: string) {
+  const event = await getEventByShareToken(shareToken);
 
   if (!event) {
     return [];
   }
 
-  return getStore().participants.filter((participant) => participant.eventId === event.id);
+  const rows =
+    (await supabaseRest<Record<string, unknown>[]>("participants", {
+    query: {
+      select: "*",
+      event_id: `eq.${event.id}`,
+      order: "created_at.asc"
+    }
+    })) ?? [];
+
+  return rows.map(mapParticipantRow);
 }
 
-export function addParticipantToEvent(
+export async function addParticipantToEvent(
   shareToken: string,
   input: Pick<Participant, "displayName" | "isHost">
 ) {
-  const event = getEventByShareToken(shareToken);
+  const event = await getEventByShareToken(shareToken);
 
   if (!event) {
     return undefined;
   }
 
   ensureEventEditable(event);
-
-  const store = getStore();
-  const duplicate = store.participants.find(
+  const participants = await listParticipantsByShareToken(shareToken);
+  const duplicate = participants.find(
     (participant) =>
-      participant.eventId === event.id &&
       participant.displayName.toLowerCase() === input.displayName.trim().toLowerCase()
   );
 
   if (duplicate) {
     if (!duplicate.joinedAt) {
-      duplicate.joinedAt = new Date().toISOString();
-      duplicate.status = "joined";
-      duplicate.updatedAt = duplicate.joinedAt;
+      const rows =
+        (await supabaseRest<Record<string, unknown>[]>("participants", {
+        method: "PATCH",
+        query: {
+          id: `eq.${duplicate.id}`
+        },
+        body: {
+          joined_at: new Date().toISOString(),
+          status: "joined"
+        }
+        })) ?? [];
+
+      return rows[0] ? mapParticipantRow(rows[0]) : duplicate;
     }
 
     return duplicate;
   }
 
-  const now = new Date().toISOString();
-  const participant: Participant = {
-    id: crypto.randomUUID(),
-    eventId: event.id,
-    displayName: input.displayName.trim(),
-    joinedAt: now,
-    isHost: input.isHost,
-    status: "joined",
-    browserFingerprint: null,
-    createdAt: now,
-    updatedAt: now
-  };
+  const rows =
+    (await supabaseRest<Record<string, unknown>[]>("participants", {
+    method: "POST",
+    body: {
+      event_id: event.id,
+      display_name: input.displayName.trim(),
+      joined_at: new Date().toISOString(),
+      is_host: input.isHost,
+      status: "joined"
+    }
+    })) ?? [];
 
-  store.participants.push(participant);
-  return participant;
+  return rows[0] ? mapParticipantRow(rows[0]) : undefined;
 }

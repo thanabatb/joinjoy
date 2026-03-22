@@ -7,7 +7,7 @@ export async function GET(
   context: { params: Promise<{ shareToken: string }> }
 ) {
   const { shareToken } = await context.params;
-  const payout = getPayoutByShareToken(shareToken);
+  const payout = await getPayoutByShareToken(shareToken);
 
   if (!payout) {
     return NextResponse.json(
@@ -39,7 +39,7 @@ export async function PUT(
   }
 
   try {
-    const payout = upsertPayoutForEvent(shareToken, {
+    const payout = await upsertPayoutForEvent(shareToken, {
       payoutType: payload.data.payoutType,
       recipientName: payload.data.recipientName,
       bankName: payload.data.bankName ?? null,

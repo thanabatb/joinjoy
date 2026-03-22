@@ -1,102 +1,132 @@
 import { ensureEventEditable } from "@/lib/guards/ensure-event-editable";
-import { getEventByShareToken } from "@/lib/repositories/events";
 import type { Item } from "@/types/item";
-import { getStore } from "./mock-store";
+import { getEventById, getEventByShareToken, updateEventByShareToken } from "./events";
+import { mapItemRow } from "./mappers";
+import { supabaseRpc, supabaseRest } from "@/lib/supabase/rest";
 
-export function listItemsByShareToken(shareToken: string) {
-  const event = getEventByShareToken(shareToken);
+export async function listItemsByShareToken(shareToken: string) {
+  const event = await getEventByShareToken(shareToken);
 
   if (!event) {
     return [];
   }
 
-  return getStore()
-    .items.filter((item) => item.eventId === event.id)
-    .sort((left, right) => left.sortOrder - right.sortOrder);
+  const rows =
+    (await supabaseRest<Record<string, unknown>[]>("items", {
+    query: {
+      select: "*",
+      event_id: `eq.${event.id}`,
+      order: "sort_order.asc"
+    }
+    })) ?? [];
+
+  return rows.map(mapItemRow);
 }
 
-export function getItemById(itemId: string) {
-  return getStore().items.find((item) => item.id === itemId);
+export async function getItemById(itemId: string) {
+  const row = await supabaseRest<Record<string, unknown>>("items", {
+    query: {
+      select: "*",
+      id: `eq.${itemId}`
+    },
+    single: true,
+    allowEmpty: true
+  });
+
+  return row ? mapItemRow(row) : undefined;
 }
 
-export function addItemToEvent(
+export async function addItemToEvent(
   shareToken: string,
   input: Pick<Item, "name" | "price" | "quantity" | "assignmentMode">
 ) {
-  const event = getEventByShareToken(shareToken);
+  const event = await getEventByShareToken(shareToken);
 
   if (!event) {
     return undefined;
   }
 
   ensureEventEditable(event);
+  const eventItems = await listItemsByShareToken(shareToken);
+  const rows =
+    (await supabaseRest<Record<string, unknown>[]>("items", {
+    method: "POST",
+    body: {
+      event_id: event.id,
+      name: input.name.trim(),
+      price: input.price,
+      quantity: input.quantity,
+      assignment_mode: input.assignmentMode,
+      status: "unclaimed",
+      sort_order: eventItems.length + 1
+    }
+    })) ?? [];
 
-  const store = getStore();
-  const now = new Date().toISOString();
-  const eventItems = store.items.filter((item) => item.eventId === event.id);
-  const item: Item = {
-    id: crypto.randomUUID(),
-    eventId: event.id,
-    name: input.name.trim(),
-    price: input.price,
-    quantity: input.quantity,
-    totalPrice: input.price * input.quantity,
-    assignmentMode: input.assignmentMode,
-    status: input.assignmentMode === "unclaimed" ? "unclaimed" : "unclaimed",
-    sortOrder: eventItems.length + 1,
-    createdAt: now,
-    updatedAt: now
-  };
-
-  store.items.push(item);
   if (event.status === "draft") {
-    event.status = "claiming";
-    event.updatedAt = now;
+    await updateEventByShareToken(shareToken, { status: "claiming" });
   }
 
-  return item;
+  return rows[0] ? mapItemRow(rows[0]) : undefined;
 }
 
-export function updateItemById(
+export async function updateItemById(
   itemId: string,
   input: Partial<Pick<Item, "name" | "price" | "quantity" | "assignmentMode">>
 ) {
-  const item = getItemById(itemId);
+  const item = await getItemById(itemId);
 
   if (!item) {
     return undefined;
   }
 
-  const event = getStore().events.find((entry) => entry.id === item.eventId);
+  const event = await getEventById(item.eventId);
 
   if (!event) {
     return undefined;
   }
 
   ensureEventEditable(event);
-  Object.assign(item, input);
-  item.totalPrice = item.price * item.quantity;
-  item.updatedAt = new Date().toISOString();
+  const patch: Record<string, unknown> = {};
 
-  return item;
+  if (input.name !== undefined) patch.name = input.name;
+  if (input.price !== undefined) patch.price = input.price;
+  if (input.quantity !== undefined) patch.quantity = input.quantity;
+  if (input.assignmentMode !== undefined) patch.assignment_mode = input.assignmentMode;
+
+  const rows =
+    (await supabaseRest<Record<string, unknown>[]>("items", {
+    method: "PATCH",
+    query: {
+      id: `eq.${itemId}`
+    },
+    body: patch
+    })) ?? [];
+
+  await supabaseRpc("refresh_item_status", { p_item_id: itemId }).catch(() => null);
+
+  return rows[0] ? mapItemRow(rows[0]) : undefined;
 }
 
-export function deleteItemById(itemId: string) {
-  const store = getStore();
-  const item = getItemById(itemId);
+export async function deleteItemById(itemId: string) {
+  const item = await getItemById(itemId);
 
   if (!item) {
     return false;
   }
 
-  const event = store.events.find((entry) => entry.id === item.eventId);
+  const event = await getEventById(item.eventId);
 
   if (!event) {
     return false;
   }
 
   ensureEventEditable(event);
-  store.items = store.items.filter((entry) => entry.id !== itemId);
-  store.itemClaims = store.itemClaims.filter((claim) => claim.itemId !== itemId);
+  await supabaseRest<Record<string, unknown>[]>("items", {
+    method: "DELETE",
+    query: {
+      id: `eq.${itemId}`
+    }
+  });
+
   return true;
 }

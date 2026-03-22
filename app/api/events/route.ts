@@ -7,7 +7,7 @@ import {
 import { createEventSchema } from "@/lib/validations/event";
 
 export async function GET() {
-  return NextResponse.json(listEvents());
+  return NextResponse.json(await listEvents());
 }
 
 export async function POST(request: Request) {
@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const { event, hostParticipant } = createEvent(payload.data);
+  const { event, hostParticipant } = await createEvent(payload.data);
   const response = NextResponse.json({
     id: event.id,
     shareToken: event.shareToken,

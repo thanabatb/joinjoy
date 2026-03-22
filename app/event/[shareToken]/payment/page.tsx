@@ -13,15 +13,15 @@ export default async function PaymentPage({
   params: Promise<{ shareToken: string }>;
 }) {
   const { shareToken } = await params;
-  const event = getEventOverviewByShareToken(shareToken);
+  const event = await getEventOverviewByShareToken(shareToken);
 
   if (!event) {
     notFound();
   }
 
-  const payout = getPayoutByShareToken(shareToken);
-  const summary = getSummaryByShareToken(shareToken);
-  const statuses = listPaymentStatusesByShareToken(shareToken);
+  const payout = await getPayoutByShareToken(shareToken);
+  const summary = await getSummaryByShareToken(shareToken);
+  const statuses = await listPaymentStatusesByShareToken(shareToken);
   const firstParticipant = statuses[0];
   const canMarkPaid = event.status === "finalized" && firstParticipant;
 

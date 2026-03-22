@@ -8,7 +8,7 @@ type HomeEvent = {
   when: string;
   href: string;
   accent: "jazz" | "lunch" | "bbq";
-  status: "claiming" | "joined" | "finalized" | "settled";
+  status: "claiming" | "finalized" | "settled";
   note: string;
 };
 
@@ -29,20 +29,26 @@ function EventCard({ event }: { event: HomeEvent }) {
 }
 
 export function HomeEventTabs({
+  latestHref,
   done,
   ongoing
 }: {
+  latestHref?: string;
   done: readonly HomeEvent[];
   ongoing: readonly HomeEvent[];
 }) {
   const [activeTab, setActiveTab] = useState<"ongoing" | "done">("ongoing");
   const events = activeTab === "ongoing" ? ongoing : done;
+  const emptyLabel =
+    activeTab === "ongoing"
+      ? "No ongoing events yet. Create one to start splitting."
+      : "No completed events yet.";
 
   return (
     <section className="stack" style={{ gap: 18 }}>
       <div className="toolbar">
         <h3 className="home-section-title">Your Events</h3>
-        <Link className="home-inline-link" href="/event/jazz-night-demo/summary">
+        <Link className="home-inline-link" href={latestHref ?? "/create"}>
           Open latest
         </Link>
       </div>
@@ -69,9 +75,13 @@ export function HomeEventTabs({
       </div>
 
       <div className="home-event-list">
-        {events.map((event) => (
-          <EventCard event={event} key={`${activeTab}-${event.title}-${event.when}`} />
-        ))}
+        {events.length > 0 ? (
+          events.map((event) => (
+            <EventCard event={event} key={`${activeTab}-${event.href}-${event.title}`} />
+          ))
+        ) : (
+          <div className="home-empty-card">{emptyLabel}</div>
+        )}
       </div>
     </section>
   );

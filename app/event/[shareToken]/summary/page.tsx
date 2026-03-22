@@ -29,15 +29,15 @@ export default async function EventSummaryPage({
   params: Promise<{ shareToken: string }>;
 }) {
   const { shareToken } = await params;
-  const event = getEventOverviewByShareToken(shareToken);
+  const event = await getEventOverviewByShareToken(shareToken);
 
   if (!event) {
     notFound();
   }
 
-  const participants = listParticipantsByShareToken(shareToken);
-  const items = listItemsByShareToken(shareToken);
-  const claims = listClaimsByEventId(event.id);
+  const participants = await listParticipantsByShareToken(shareToken);
+  const items = await listItemsByShareToken(shareToken);
+  const claims = await listClaimsByEventId(event.id);
   const cookieStore = await cookies();
   const participantId = cookieStore.get(getParticipantSessionCookieName(shareToken))?.value ?? null;
   const totalAmountText = new Intl.NumberFormat("en-US", {

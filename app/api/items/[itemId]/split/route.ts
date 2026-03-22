@@ -22,7 +22,7 @@ export async function POST(
   }
 
   try {
-    const success = splitItemAcrossParticipants(itemId, payload.data.participantIds);
+    const success = await splitItemAcrossParticipants(itemId, payload.data.participantIds);
 
     if (!success) {
       return NextResponse.json(

@@ -8,7 +8,7 @@ export async function POST(
   const { shareToken } = await context.params;
 
   try {
-    const event = finalizeEventByShareToken(shareToken);
+    const event = await finalizeEventByShareToken(shareToken);
 
     if (!event) {
       return NextResponse.json(

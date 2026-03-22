@@ -14,14 +14,14 @@ export default async function HostPage({
   params: Promise<{ shareToken: string }>;
 }) {
   const { shareToken } = await params;
-  const event = getEventOverviewByShareToken(shareToken);
-  const summary = getSummaryByShareToken(shareToken);
+  const event = await getEventOverviewByShareToken(shareToken);
+  const summary = await getSummaryByShareToken(shareToken);
 
   if (!event || !summary) {
     notFound();
   }
 
-  const unresolvedItems = listItemsByShareToken(shareToken).filter(
+  const unresolvedItems = (await listItemsByShareToken(shareToken)).filter(
     (item) => item.status !== "claimed" && item.status !== "resolved"
   );
 

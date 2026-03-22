@@ -1,43 +1,7 @@
 import Link from "next/link";
 import { HomeEventTabs } from "@/components/home/event-tabs";
-
-const ongoingEvents = [
-  {
-    title: "Jazz Night at Jazz Bar",
-    when: "Yesterday",
-    href: "/event/jazz-night-demo/summary",
-    accent: "jazz",
-    status: "claiming",
-    note: "Claims are still in progress."
-  },
-  {
-    title: "Office Lunch",
-    when: "Thursday",
-    href: "/event/jazz-night-demo/summary",
-    accent: "lunch",
-    status: "joined",
-    note: "Waiting for a few people to finish claiming."
-  }
-] as const;
-
-const doneEvents = [
-  {
-    title: "BBQ Friday",
-    when: "Last week",
-    href: "/event/jazz-night-demo/host",
-    accent: "bbq",
-    status: "settled",
-    note: "Fully cleared and ready to review."
-  },
-  {
-    title: "Team Brunch",
-    when: "Last month",
-    href: "/event/jazz-night-demo/host",
-    accent: "lunch",
-    status: "finalized",
-    note: "Final totals locked."
-  }
-] as const;
+import { listEvents } from "@/lib/repositories/events";
+import type { Event } from "@/types/event";
 
 const howItWorks = [
   {
@@ -57,7 +21,82 @@ const howItWorks = [
   }
 ] as const;
 
-export default function HomePage() {
+function resolveAccent(event: Event) {
+  const source = `${event.title} ${event.venueName ?? ""}`.toLowerCase();
+
+  if (source.includes("jazz") || source.includes("bar")) {
+    return "jazz" as const;
+  }
+
+  if (source.includes("bbq") || source.includes("grill")) {
+    return "bbq" as const;
+  }
+
+  return "lunch" as const;
+}
+
+function formatWhen(occurredAt: string) {
+  const date = new Date(occurredAt);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Recently";
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric"
+  }).format(date);
+}
+
+function getEventNote(event: Event) {
+  switch (event.status) {
+    case "draft":
+      return "Ready for the host to add bill items.";
+    case "claiming":
+      return "Claims are still in progress.";
+    case "needs_review":
+      return "A few items still need review.";
+    case "finalized":
+      return "Final totals are locked and awaiting settlement.";
+    case "settled":
+      return "Fully cleared and ready to review.";
+    default:
+      return "Open the event to continue.";
+  }
+}
+
+function getEventHref(event: Event) {
+  return `/event/${event.shareToken}/summary`;
+}
+
+export default async function HomePage() {
+  const events = await listEvents();
+  const latestHref = events[0] ? getEventHref(events[0]) : undefined;
+  const ongoingEvents = events
+    .filter((event) => event.status !== "settled")
+    .map((event) => {
+      const status = event.status === "finalized" ? ("finalized" as const) : ("claiming" as const);
+
+      return {
+        title: event.title,
+        when: formatWhen(event.occurredAt),
+        href: getEventHref(event),
+        accent: resolveAccent(event),
+        status,
+        note: getEventNote(event)
+      };
+    });
+  const doneEvents = events
+    .filter((event) => event.status === "settled")
+    .map((event) => ({
+      title: event.title,
+      when: formatWhen(event.occurredAt),
+      href: getEventHref(event),
+      accent: resolveAccent(event),
+      status: "settled" as const,
+      note: getEventNote(event)
+    }));
+
   return (
     <>
       <main className="page-shell home-page">
@@ -87,14 +126,17 @@ export default function HomePage() {
               <Link className="button home-button-primary" href="/create">
                 Create Event
               </Link>
-              <Link className="button-secondary home-button-secondary" href="/event/jazz-night-demo">
+              <Link
+                className="button-secondary home-button-secondary"
+                href={latestHref ?? "/create"}
+              >
                 Join Event
               </Link>
             </div>
           </div>
         </section>
 
-        <HomeEventTabs done={doneEvents} ongoing={ongoingEvents} />
+        <HomeEventTabs done={doneEvents} latestHref={latestHref} ongoing={ongoingEvents} />
 
         <section className="home-steps">
           <div className="stack" style={{ gap: 8, textAlign: "center" }}>
@@ -121,7 +163,7 @@ export default function HomePage() {
         <div className="home-nav-item active">
           <span>Home</span>
         </div>
-        <Link className="home-nav-item" href="/event/jazz-night-demo">
+        <Link className="home-nav-item" href={latestHref ?? "/create"}>
           <span>Events</span>
         </Link>
         <div className="home-nav-item">

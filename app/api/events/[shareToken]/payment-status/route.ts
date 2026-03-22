@@ -6,5 +6,5 @@ export async function GET(
   context: { params: Promise<{ shareToken: string }> }
 ) {
   const { shareToken } = await context.params;
-  return NextResponse.json(listPaymentStatusesByShareToken(shareToken));
+  return NextResponse.json(await listPaymentStatusesByShareToken(shareToken));
 }

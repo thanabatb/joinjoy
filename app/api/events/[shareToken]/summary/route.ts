@@ -6,7 +6,7 @@ export async function GET(
   context: { params: Promise<{ shareToken: string }> }
 ) {
   const { shareToken } = await context.params;
-  const summary = getSummaryByShareToken(shareToken);
+  const summary = await getSummaryByShareToken(shareToken);
 
   if (!summary) {
     return NextResponse.json(
