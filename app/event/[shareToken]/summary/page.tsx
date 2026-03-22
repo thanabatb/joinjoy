@@ -9,6 +9,7 @@ import { getEventOverviewByShareToken } from "@/lib/repositories/events";
 import { listItemsByShareToken } from "@/lib/repositories/items";
 import { listParticipantsByShareToken } from "@/lib/repositories/participants";
 import { getParticipantSessionCookieName } from "@/lib/session/participant-session";
+import { normalizeShareToken } from "@/lib/utils/share-token";
 
 function getInitials(name: string) {
   return name
@@ -29,7 +30,8 @@ export default async function EventSummaryPage({
 }: {
   params: Promise<{ shareToken: string }>;
 }) {
-  const { shareToken } = await params;
+  const { shareToken: rawShareToken } = await params;
+  const shareToken = normalizeShareToken(rawShareToken);
   const event = await getEventOverviewByShareToken(shareToken);
 
   if (!event) {

@@ -10,13 +10,15 @@ import { ParticipantList } from "@/components/participants/participant-list";
 import { getEventOverviewByShareToken } from "@/lib/repositories/events";
 import { listItemsByShareToken } from "@/lib/repositories/items";
 import { listParticipantsByShareToken } from "@/lib/repositories/participants";
+import { normalizeShareToken } from "@/lib/utils/share-token";
 
 export default async function EventOverviewPage({
   params
 }: {
   params: Promise<{ shareToken: string }>;
 }) {
-  const { shareToken } = await params;
+  const { shareToken: rawShareToken } = await params;
+  const shareToken = normalizeShareToken(rawShareToken);
   const event = await getEventOverviewByShareToken(shareToken);
 
   if (!event) {

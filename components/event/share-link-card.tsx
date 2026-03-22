@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 export function ShareLinkCard({ shareToken }: { shareToken: string }) {
-  const path = `/event/${shareToken}`;
+  const path = `/event/${shareToken}/summary`;
 
   return (
     <section className="card stack">
@@ -19,7 +19,7 @@ export function ShareLinkCard({ shareToken }: { shareToken: string }) {
         <Link className="button-secondary" href={path}>
           Open event
         </Link>
-        <Link className="button-ghost" href={`${path}/payment`}>
+        <Link className="button-ghost" href={`/event/${shareToken}/payment`}>
           Preview payment view
         </Link>
       </div>

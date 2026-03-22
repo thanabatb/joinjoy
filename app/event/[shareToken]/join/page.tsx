@@ -5,13 +5,15 @@ import { JoinEventForm } from "@/components/event/join-event-form";
 import { getEventOverviewByShareToken } from "@/lib/repositories/events";
 import { listParticipantsByShareToken } from "@/lib/repositories/participants";
 import { getParticipantSessionCookieName } from "@/lib/session/participant-session";
+import { normalizeShareToken } from "@/lib/utils/share-token";
 
 export default async function JoinEventPage({
   params
 }: {
   params: Promise<{ shareToken: string }>;
 }) {
-  const { shareToken } = await params;
+  const { shareToken: rawShareToken } = await params;
+  const shareToken = normalizeShareToken(rawShareToken);
   const event = await getEventOverviewByShareToken(shareToken);
 
   if (!event) {

@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import { getPayoutByShareToken, upsertPayoutForEvent } from "@/lib/repositories/payout";
+import { normalizeShareToken } from "@/lib/utils/share-token";
 import { upsertPayoutSchema } from "@/lib/validations/payout";
 
 export async function GET(
   _request: Request,
   context: { params: Promise<{ shareToken: string }> }
 ) {
-  const { shareToken } = await context.params;
+  const { shareToken: rawShareToken } = await context.params;
+  const shareToken = normalizeShareToken(rawShareToken);
   const payout = await getPayoutByShareToken(shareToken);
 
   if (!payout) {
@@ -23,7 +25,8 @@ export async function PUT(
   request: Request,
   context: { params: Promise<{ shareToken: string }> }
 ) {
-  const { shareToken } = await context.params;
+  const { shareToken: rawShareToken } = await context.params;
+  const shareToken = normalizeShareToken(rawShareToken);
   const payload = upsertPayoutSchema.safeParse(await request.json());
 
   if (!payload.success) {

@@ -13,8 +13,8 @@ export function ShareActions({
 
   const shareUrl =
     typeof window === "undefined"
-      ? `/event/${shareToken}`
-      : `${window.location.origin}/event/${shareToken}`;
+      ? `/event/${shareToken}/summary`
+      : `${window.location.origin}/event/${shareToken}/summary`;
 
   async function copyLink() {
     try {
@@ -30,7 +30,6 @@ export function ShareActions({
     if (navigator.share) {
       await navigator.share({
         title: "JoinJoy Event",
-        text: "Join this event on JoinJoy",
         url: shareUrl
       });
       return;

@@ -6,13 +6,15 @@ import { PayoutInfoCard } from "@/components/payment/payout-info-card";
 import { getEventOverviewByShareToken } from "@/lib/repositories/events";
 import { getSummaryByShareToken, listPaymentStatusesByShareToken } from "@/lib/repositories/payments";
 import { getPayoutByShareToken } from "@/lib/repositories/payout";
+import { normalizeShareToken } from "@/lib/utils/share-token";
 
 export default async function PaymentPage({
   params
 }: {
   params: Promise<{ shareToken: string }>;
 }) {
-  const { shareToken } = await params;
+  const { shareToken: rawShareToken } = await params;
+  const shareToken = normalizeShareToken(rawShareToken);
   const event = await getEventOverviewByShareToken(shareToken);
 
   if (!event) {

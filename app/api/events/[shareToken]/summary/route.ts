@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import { getSummaryByShareToken } from "@/lib/repositories/payments";
+import { normalizeShareToken } from "@/lib/utils/share-token";
 
 export async function GET(
   _request: Request,
   context: { params: Promise<{ shareToken: string }> }
 ) {
-  const { shareToken } = await context.params;
+  const { shareToken: rawShareToken } = await context.params;
+  const shareToken = normalizeShareToken(rawShareToken);
   const summary = await getSummaryByShareToken(shareToken);
 
   if (!summary) {

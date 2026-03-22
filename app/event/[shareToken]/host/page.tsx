@@ -7,13 +7,15 @@ import { SummaryList } from "@/components/summary/summary-list";
 import { getEventOverviewByShareToken } from "@/lib/repositories/events";
 import { listItemsByShareToken } from "@/lib/repositories/items";
 import { getSummaryByShareToken } from "@/lib/repositories/payments";
+import { normalizeShareToken } from "@/lib/utils/share-token";
 
 export default async function HostPage({
   params
 }: {
   params: Promise<{ shareToken: string }>;
 }) {
-  const { shareToken } = await params;
+  const { shareToken: rawShareToken } = await params;
+  const shareToken = normalizeShareToken(rawShareToken);
   const event = await getEventOverviewByShareToken(shareToken);
   const summary = await getSummaryByShareToken(shareToken);
 

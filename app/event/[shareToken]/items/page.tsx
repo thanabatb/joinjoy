@@ -6,6 +6,7 @@ import { getEventOverviewByShareToken } from "@/lib/repositories/events";
 import { listItemsByShareToken } from "@/lib/repositories/items";
 import { formatCurrency } from "@/lib/utils/currency";
 import { formatEventDate } from "@/lib/utils/dates";
+import { normalizeShareToken } from "@/lib/utils/share-token";
 
 function getItemAccent(name: string) {
   const value = name.toLowerCase();
@@ -26,7 +27,8 @@ export default async function AddExpensesPage({
 }: {
   params: Promise<{ shareToken: string }>;
 }) {
-  const { shareToken } = await params;
+  const { shareToken: rawShareToken } = await params;
+  const shareToken = normalizeShareToken(rawShareToken);
   const event = await getEventOverviewByShareToken(shareToken);
 
   if (!event) {

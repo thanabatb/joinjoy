@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { addParticipantToEvent, listParticipantsByShareToken } from "@/lib/repositories/participants";
+import { normalizeShareToken } from "@/lib/utils/share-token";
 import {
   getParticipantSessionCookieName,
   getParticipantSessionCookieOptions
@@ -10,7 +11,8 @@ export async function GET(
   _request: Request,
   context: { params: Promise<{ shareToken: string }> }
 ) {
-  const { shareToken } = await context.params;
+  const { shareToken: rawShareToken } = await context.params;
+  const shareToken = normalizeShareToken(rawShareToken);
   return NextResponse.json(await listParticipantsByShareToken(shareToken));
 }
 
@@ -18,7 +20,8 @@ export async function POST(
   request: Request,
   context: { params: Promise<{ shareToken: string }> }
 ) {
-  const { shareToken } = await context.params;
+  const { shareToken: rawShareToken } = await context.params;
+  const shareToken = normalizeShareToken(rawShareToken);
   const payload = addParticipantSchema.safeParse(await request.json());
 
   if (!payload.success) {

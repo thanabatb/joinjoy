@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import { addItemToEvent, listItemsByShareToken } from "@/lib/repositories/items";
+import { normalizeShareToken } from "@/lib/utils/share-token";
 import { createItemSchema } from "@/lib/validations/item";
 
 export async function GET(
   _request: Request,
   context: { params: Promise<{ shareToken: string }> }
 ) {
-  const { shareToken } = await context.params;
+  const { shareToken: rawShareToken } = await context.params;
+  const shareToken = normalizeShareToken(rawShareToken);
   return NextResponse.json(await listItemsByShareToken(shareToken));
 }
 
@@ -14,7 +16,8 @@ export async function POST(
   request: Request,
   context: { params: Promise<{ shareToken: string }> }
 ) {
-  const { shareToken } = await context.params;
+  const { shareToken: rawShareToken } = await context.params;
+  const shareToken = normalizeShareToken(rawShareToken);
   const payload = createItemSchema.safeParse(await request.json());
 
   if (!payload.success) {

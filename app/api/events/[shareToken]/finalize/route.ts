@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import { finalizeEventByShareToken } from "@/lib/repositories/payments";
+import { normalizeShareToken } from "@/lib/utils/share-token";
 
 export async function POST(
   _request: Request,
   context: { params: Promise<{ shareToken: string }> }
 ) {
-  const { shareToken } = await context.params;
+  const { shareToken: rawShareToken } = await context.params;
+  const shareToken = normalizeShareToken(rawShareToken);
 
   try {
     const event = await finalizeEventByShareToken(shareToken);

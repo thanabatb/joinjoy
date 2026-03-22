@@ -4,13 +4,15 @@ import { PageHeader } from "@/components/common/page-header";
 import { ItemList } from "@/components/items/item-list";
 import { getEventOverviewByShareToken } from "@/lib/repositories/events";
 import { listItemsByShareToken } from "@/lib/repositories/items";
+import { normalizeShareToken } from "@/lib/utils/share-token";
 
 export default async function ClaimPage({
   params
 }: {
   params: Promise<{ shareToken: string }>;
 }) {
-  const { shareToken } = await params;
+  const { shareToken: rawShareToken } = await params;
+  const shareToken = normalizeShareToken(rawShareToken);
   const event = await getEventOverviewByShareToken(shareToken);
 
   if (!event) {

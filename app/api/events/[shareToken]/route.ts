@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import { getEventOverviewByShareToken, updateEventByShareToken } from "@/lib/repositories/events";
+import { normalizeShareToken } from "@/lib/utils/share-token";
 import { updateEventSchema } from "@/lib/validations/event";
 
 export async function GET(
   _request: Request,
   context: { params: Promise<{ shareToken: string }> }
 ) {
-  const { shareToken } = await context.params;
+  const { shareToken: rawShareToken } = await context.params;
+  const shareToken = normalizeShareToken(rawShareToken);
   const event = await getEventOverviewByShareToken(shareToken);
 
   if (!event) {
@@ -23,7 +25,8 @@ export async function PATCH(
   request: Request,
   context: { params: Promise<{ shareToken: string }> }
 ) {
-  const { shareToken } = await context.params;
+  const { shareToken: rawShareToken } = await context.params;
+  const shareToken = normalizeShareToken(rawShareToken);
   const payload = updateEventSchema.safeParse(await request.json());
 
   if (!payload.success) {
