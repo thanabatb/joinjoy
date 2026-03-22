@@ -17,6 +17,11 @@ function getInitials(name: string) {
     .join("");
 }
 
+function getAvatarTone(index: number) {
+  const tones = ["primary", "secondary", "tertiary", "amber"] as const;
+  return tones[index % tones.length];
+}
+
 function getItemIcon(name: string) {
   const value = name.toLowerCase();
 
@@ -229,6 +234,11 @@ export function SummaryItemList({
           !!viewerParticipantId &&
           itemClaims.some((claim) => claim.participantId === viewerParticipantId);
         const canClaim = !!viewerParticipantId && !isClaimedByViewer;
+        const metaText = isOpen
+          ? "UNCLAIMED"
+          : isShared
+            ? `Shared by ${claimParticipants.length} people`
+            : "CLAIMED";
 
         return (
           <article
@@ -253,11 +263,7 @@ export function SummaryItemList({
               <div className="event-summary-item-body">
                 <strong>{item.name}</strong>
                 <span className={isOpen ? "event-summary-item-meta open" : "event-summary-item-meta"}>
-                  {isOpen
-                    ? "UNCLAIMED"
-                    : isShared
-                      ? `Shared by ${claimNames.join(", ")}`
-                      : `Claimed by ${claimNames.join(", ")}`}
+                  {metaText}
                 </span>
               </div>
             </div>
@@ -265,8 +271,11 @@ export function SummaryItemList({
             {!isOpen && claimParticipants.length ? (
               <div className="event-summary-item-claimers">
                 <div className="event-summary-item-avatar-stack">
-                  {claimParticipants.slice(0, 3).map((participant) => (
-                    <div className="event-summary-avatar tone-claimed" key={participant.id}>
+                  {claimParticipants.slice(0, 3).map((participant, index) => (
+                    <div
+                      className={`event-summary-avatar tone-${getAvatarTone(index)}`}
+                      key={participant.id}
+                    >
                       {getInitials(participant.displayName)}
                     </div>
                   ))}
@@ -276,9 +285,6 @@ export function SummaryItemList({
                     </div>
                   ) : null}
                 </div>
-                <span className="event-summary-item-claimer-label">
-                  {claimNames.slice(0, 2).join(", ")}
-                </span>
               </div>
             ) : null}
 
